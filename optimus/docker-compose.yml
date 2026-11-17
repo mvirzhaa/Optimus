@@ -1,0 +1,34 @@
+# Optimus: PostgreSQL + layanan Python (analisis, SUMO asli, laporan) + server Node (aplikasi & API)
+# Jalankan:  DB_PASSWORD=sandi-kuat docker compose up -d --build   lalu buka http://localhost:3000
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: optimus
+      POSTGRES_USER: optimus
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-optimus}
+    volumes: [ "pgdata:/var/lib/postgresql/data" ]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U optimus -d optimus"], interval: 5s, retries: 20 }
+  python:
+    build: { context: ., dockerfile: python/Dockerfile }
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://optimus:${DB_PASSWORD:-optimus}@db:5432/optimus
+      SUMO_TIMEOUT: "900"
+    depends_on: { db: { condition: service_healthy } }
+  web:
+    build: { context: ., dockerfile: node/Dockerfile }
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://optimus:${DB_PASSWORD:-optimus}@db:5432/optimus
+      PY_URL: http://python:8001
+      PORT: "3000"
+      ALLOW_REGISTER: ${ALLOW_REGISTER:-1}
+      OSM_MAX_KM2: ${OSM_MAX_KM2:-6}
+      GEOCODE_COUNTRY: ${GEOCODE_COUNTRY:-id}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
+    ports: [ "127.0.0.1:${PORT:-3004}:3000" ]
+    depends_on: { db: { condition: service_healthy }, python: { condition: service_started } }
+volumes:
+  pgdata:

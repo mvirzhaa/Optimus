@@ -1,0 +1,23 @@
+{
+  "name": "optimus-server",
+  "version": "1.1.0",
+  "description": "Optimus: server Node.js + PostgreSQL",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "migrate": "node -e \"require('./src/db').migrate().then(()=>process.exit(0))\"",
+    "test:api": "node test/api.test.js",
+    "test:features": "node test/features.test.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.22.3",
+    "leaflet": "^1.9.4",
+    "pg": "^8.23.1",
+    "three": "^0.128.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,6 @@
+OPTIMUS - simulator lalu lintas
+================================
+1. Cara tercepat: buka optimus.html dengan Chrome/Edge/Firefox (tanpa instalasi).
+2. Dengan server (akun, simpan proyek, laporan Word/PDF, peta OSM, SUMO asli):
+   lihat Bab 2 di Manual_Optimus.pdf atau optimus/README.md.
+3. Manual lengkap: Manual_Optimus.pdf (atau .docx untuk diedit).

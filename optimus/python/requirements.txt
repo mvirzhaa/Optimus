@@ -1,0 +1,8 @@
+fastapi>=0.110
+uvicorn>=0.29
+psycopg[binary]>=3.1
+pydantic>=2.5
+# SUMO asli untuk fitur "Jalankan di SUMO asli" (opsional; boleh diganti instalasi SUMO sistem + SUMO_HOME)
+eclipse-sumo>=1.20
+python-docx>=1.1
+matplotlib>=3.8

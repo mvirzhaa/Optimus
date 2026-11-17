@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Optimus – Simulator Lalu Lintas</title>
+<style>
+:root{--bg:#14181f;--panel:#1c222c;--panel2:#232a36;--line:#2f3846;--text:#e6e9ef;--mut:#9aa4b2;--acc:#4f9dff;--acc2:#2ecc71;--warn:#f2994a;--bad:#eb5757;--road:#3b4250}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+button,select,input,textarea{font:inherit;color:var(--text)}
+#app{display:grid;grid-template-rows:auto 1fr;height:100%}
+header{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#0f1319;border-bottom:1px solid var(--line);min-width:0}
+.brand{font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.brand b{color:var(--acc)}
+#tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1}
+#tabs::-webkit-scrollbar{display:none}
+#tabs button{background:none;border:0;padding:7px 10px;border-radius:6px;color:var(--mut);white-space:nowrap;cursor:pointer}
+#tabs button.on{background:var(--panel2);color:var(--text)}
+#main{display:grid;grid-template-columns:1fr 370px;min-height:0}
+#stage{position:relative;min-width:0;min-height:0;background:#10141a}
+canvas#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+#panel{background:var(--panel);border-left:1px solid var(--line);overflow:auto;padding:10px 12px 40px}
+#tools{position:absolute;left:8px;top:8px;display:flex;flex-direction:column;gap:4px;z-index:2}
+#tools button,.fbtn{width:38px;height:38px;border-radius:8px;border:1px solid var(--line);background:rgba(28,34,44,.92);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+#tools button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+#simbar{position:absolute;left:8px;right:8px;bottom:8px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:rgba(15,19,25,.92);border:1px solid var(--line);border-radius:10px;padding:6px 8px;z-index:2}
+#simbar button{min-width:36px;height:32px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);cursor:pointer}
+#simbar button.play{background:var(--acc2);color:#062;border-color:var(--acc2);font-weight:700}
+#simbar .time{font-variant-numeric:tabular-nums;font-weight:600;min-width:86px}
+#simbar label{display:flex;align-items:center;gap:4px;color:var(--mut);white-space:nowrap}
+#simbar input[type=range]{width:90px}
+#hint{position:absolute;top:8px;left:56px;right:8px;pointer-events:none;z-index:2;display:flex;justify-content:center}
+#hint span{background:rgba(15,19,25,.88);border:1px solid var(--line);padding:5px 10px;border-radius:8px;color:var(--mut);max-width:560px;text-align:center}
+#hint span:empty{display:none}
+#stage.split canvas#cv{width:50%}
+#stage.split canvas#cv2{position:absolute;top:0;left:50%;width:50%;height:100%;border-left:2px solid #4f9dff;touch-action:none}
+#cmpLabels{position:absolute;top:50px;left:56px;right:8px;display:flex;pointer-events:none;z-index:2}
+#cmpLabels span{background:rgba(15,19,25,.85);border:1px solid var(--line);border-radius:7px;padding:3px 8px;font-weight:600}
+#cmpLabels .b{position:absolute;left:calc(50% - 48px)}
+#c3d{position:absolute;inset:0;width:100%;height:100%;display:none;touch-action:none}
+#stage.v3d #c3d{display:block}
+#stage.v3d canvas#cv,#stage.v3d #tools{visibility:hidden}
+#coords{position:absolute;right:8px;top:8px;color:var(--mut);font-size:11px;background:rgba(15,19,25,.7);padding:2px 6px;border-radius:6px;z-index:2;font-variant-numeric:tabular-nums}
+h3{margin:14px 0 6px;font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+h3:first-child{margin-top:2px}
+.row{display:flex;gap:6px;align-items:center;margin:4px 0;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center}
+.grid2 label{color:var(--mut)}
+input[type=number],input[type=text],select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 7px;min-width:0;width:100%}
+input[type=checkbox]{accent-color:var(--acc)}
+input[type=color]{width:42px;height:28px;border:1px solid var(--line);background:var(--panel2);border-radius:6px;padding:1px}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px 10px;cursor:pointer}
+.btn:hover{border-color:#47546a}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.ok{background:#1f6f43;border-color:#2b8f58}
+.btn.bad{background:#5a2020;border-color:#7a2d2d}
+.btn.sm{padding:3px 7px;font-size:12px}
+.btn.on{outline:2px solid var(--acc)}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0}
+.mut{color:var(--mut)}
+.small{font-size:11.5px}
+table{border-collapse:collapse;width:100%;font-size:12px}
+td,th{border-bottom:1px solid var(--line);padding:3px 4px;text-align:left;vertical-align:middle}
+th{color:var(--mut);font-weight:500}
+td input,td select{padding:2px 4px;font-size:12px}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.stat div{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px}
+.stat b{display:block;font-size:15px;font-variant-numeric:tabular-nums}
+.stat span{color:var(--mut);font-size:11px}
+.state{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:1px}
+.ch{display:inline-block;width:14px;text-align:center;border-radius:3px;margin-right:1px;color:#000;font-weight:700;font-family:ui-monospace,monospace;cursor:pointer}
+.ch.G{background:#00d000}.ch.g{background:#00a000;color:#fff}.ch.y,.ch.Y{background:#ffd400}.ch.r{background:#e02020;color:#fff}.ch.u{background:#ff8000}.ch.o,.ch.O{background:#888}.ch.s{background:#800080;color:#fff}
+textarea.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;min-height:260px;white-space:pre;tab-size:4;line-height:1.45}
+pre.console{background:#0b0e13;border:1px solid var(--line);border-radius:7px;padding:8px;max-height:240px;overflow:auto;font-size:11.5px;white-space:pre-wrap;margin:6px 0}
+canvas.chart{width:100%;height:150px;background:#0f1319;border:1px solid var(--line);border-radius:7px;display:block;margin:4px 0}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--mut)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:20;padding:12px}
+#modal.on{display:flex}
+#modal .box{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:820px;width:100%;max-height:92vh;display:flex;flex-direction:column}
+#modal .hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:600}
+#modal .bd{padding:10px 12px;overflow:auto}
+#modal textarea{min-height:46vh;font-family:ui-monospace,monospace;font-size:11.5px;white-space:pre}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:76px;background:#0f1319;border:1px solid var(--line);padding:8px 14px;border-radius:9px;z-index:30;display:none;max-width:90vw}
+.tag{display:inline-block;padding:1px 6px;border-radius:10px;background:#2a3342;color:var(--mut);font-size:11px;margin-left:4px}
+.list{max-height:220px;overflow:auto}
+.list .it{display:flex;align-items:center;justify-content:space-between;padding:4px 6px;border-radius:6px;cursor:pointer;gap:6px}
+.list .it:hover,.list .it.on{background:#2a3342}
+details summary{cursor:pointer;color:var(--mut);margin:6px 0}
+#sheetHandle{display:none}
+@media (max-width:820px){
+  #main{grid-template-columns:1fr;grid-template-rows:1fr var(--sheet,44vh)}
+  #panel{border-left:0;border-top:1px solid var(--line);padding-top:4px}
+  #sheetHandle{display:block;position:sticky;top:-4px;background:var(--panel);margin:-4px -12px 4px;padding:6px 0 4px;text-align:center;z-index:3;cursor:pointer}
+  #sheetHandle i{display:inline-block;width:44px;height:5px;border-radius:3px;background:#46505f}
+  #simbar{gap:4px;padding:5px}
+  #simbar label.opt{display:none}
+  #simbar input[type=range]{width:64px}
+  #simbar{flex-wrap:nowrap}
+  #simbar .lbl{display:none}
+  #simbar .time{min-width:60px;font-size:12px}
+  #simbar button{min-width:32px}
+  .brand small{display:none}
+  #stage.split canvas#cv{width:100%;height:50%}
+  #stage.split canvas#cv2{top:50%;left:0;width:100%;height:50%;border-left:0;border-top:2px solid #4f9dff}
+  #cmpLabels .b{left:0;top:calc(50vh - 120px)}
+  #toast{bottom:auto;top:54px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand"><b>Optimus</b> <small class="mut">simulator lalu lintas</small></div>
+    <nav id="tabs"></nav>
+  </header>
+  <div id="main">
+    <div id="stage">
+      <canvas id="cv"></canvas>
+      <div id="tools"></div>
+      <div id="hint"><span id="hintText"></span></div>
+      <div id="coords"></div>
+      <div id="simbar">
+        <button id="bReset" title="Muat ulang simulasi">⟲</button>
+        <button id="bPlay" class="play" title="Jalankan / jeda">▶</button>
+        <button id="bStep" title="Satu langkah">⏭</button>
+        <span class="time" id="simTime">0.0 s</span>
+        <label title="Delay (ms per langkah)"><span class="lbl">Delay</span> <input id="delay" type="range" min="0" max="500" step="10"><span id="delayV"></span></label>
+        <label class="opt" title="Step length (detik)">Step <select id="stepLen"><option>0.1</option><option>0.2</option><option>0.25</option><option>0.5</option><option>1</option></select></label>
+        <button id="bFit" title="Sesuaikan tampilan">⤢</button>
+        <button id="b3d" title="Tampilan 3D">3D</button>
+      </div>
+    </div>
+    <aside id="panel"></aside>
+  </div>
+</div>
+<div id="modal"><div class="box"><div class="hd"><span id="mTitle"></span><button class="btn sm" id="mClose">✕</button></div><div class="bd" id="mBody"></div></div></div>
+<div id="toast"></div>
+<script>
+/*CORE*/
+</script>
+<script>
+/*UI*/
+</script>
+</body>
+</html>
