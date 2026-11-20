@@ -19,7 +19,7 @@ async function toggle3D() {
   if (!V3.renderer) {
     V3.renderer = new THREE.WebGLRenderer({ canvas: c, antialias: true });
     V3.scene = new THREE.Scene(); V3.scene.background = new THREE.Color(0x9fc3e0); V3.scene.fog = new THREE.Fog(0x9fc3e0, 900, 3500);
-    V3.camera = new THREE.PerspectiveCamera(50, 1, 0.5, 8000);
+    V3.camera = new THREE.PerspectiveCamera(50, 1, 1, 8000);
     V3.scene.add(new THREE.HemisphereLight(0xffffff, 0x445544, 0.85));
     const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(300, 600, 200); V3.scene.add(sun);
   }
@@ -49,8 +49,8 @@ function build3D(T) {
   const G = V3.group = new THREE.Group(); V3.scene.add(G);
   const W = SW.LANE_W;
   const hasUnder = Object.values(T.edges).some(te => te.layer < 0);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(20000, 20000), new THREE.MeshLambertMaterial({ color: 0x5d7a4f, transparent: hasUnder, opacity: hasUnder ? 0.82 : 1, depthWrite: !hasUnder }));
-  ground.rotation.x = -Math.PI / 2; ground.position.set(S.view.cx, -0.05, -S.view.cy); G.add(ground);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(20000, 20000), new THREE.MeshLambertMaterial({ color: 0x5d7a4f, transparent: hasUnder, opacity: hasUnder ? 0.82 : 1, depthWrite: !hasUnder, polygonOffset: true, polygonOffsetFactor: 4, polygonOffsetUnits: 8 }));
+  ground.rotation.x = -Math.PI / 2; ground.position.set(S.view.cx, -0.25, -S.view.cy); G.add(ground);
   const asphalt = [], deck = [], under = [], marks = [];
   for (const L of Object.values(T.lanes)) {
     const z = i => L.elev ? SW.zAt(L.elev, L.cum[i]) : 0;
@@ -109,15 +109,17 @@ function build3D(T) {
     sh.position.set(q.x - Math.sin(q.a) * curb * (W / 2 + 2), 1.3, -(q.y + Math.cos(q.a) * curb * (W / 2 + 2))); sh.rotation.y = q.a; G.add(sh);
   }
   // instanced dynamic objects
-  const MAXV = 6000;
   if (!V3.veh) {
     V3.veh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial(), MAXV);
     V3.veh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); V3.scene.add(V3.veh);
     V3.ped = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.25, 0.25, 1.7, 6), new THREE.MeshLambertMaterial({ color: 0xffe0b0 }), 3000); V3.scene.add(V3.ped);
     V3.tl = new THREE.InstancedMesh(new THREE.SphereGeometry(0.45, 8, 6), new THREE.MeshBasicMaterial(), 4000); V3.scene.add(V3.tl);
     V3.dummy = new THREE.Object3D(); V3.col = new THREE.Color();
+    // allocate per-instance colour buffers before the first draw, otherwise the shader is compiled without them (all white)
+    for (const m of [V3.veh, V3.tl]) { m.setColorAt(0, V3.col.setHex(0xffffff)); m.instanceColor.setUsage(THREE.DynamicDrawUsage); }
   }
 }
+const MAXV = 6000;
 const H3 = { bus: 3.1, truck: 3.2, angkot: 1.9, motorcycle: 1.3, bicycle: 1.3, emergency: 2.2, evehicle: 1.5, passenger: 1.5 };
 const TLCOL = { G: 0x00e000, g: 0x00a800, y: 0xffd400, Y: 0xffd400, r: 0xff2020, u: 0xff8000, o: 0x808080, O: 0x808080, s: 0xa000a0 };
 function render3D() {
@@ -130,7 +132,7 @@ function render3D() {
   const d = V3.dummy, sim = S.sim;
   let k = 0;
   if (sim) for (const v of sim.vehs.values()) {
-    if (k >= V3.veh.count) break;
+    if (k >= MAXV) break;
     const p = sim.vehPose(v), z = sim.vehZ(v), len = v.vt.length, wd = v.vt.width || 1.8, ht = H3[v.vt.vClass] || 1.5;
     d.position.set(p.x - Math.cos(p.a) * len / 2, z + ht / 2 + 0.05, -(p.y - Math.sin(p.a) * len / 2));
     d.rotation.set(0, p.a, 0); d.scale.set(len, ht, wd); d.updateMatrix();
